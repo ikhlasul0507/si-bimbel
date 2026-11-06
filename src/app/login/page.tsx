@@ -56,7 +56,7 @@ export default function Login() {
   return (
     <div className="lg">
       <section className="lg-hero">
-        <div className="lg-brand"><span className="lg-logo">K</span>KelasKu</div>
+        <div className="lg-brand"><span className="lg-logo">S</span>Si-Bimbel</div>
         <div className="lg-copy">
           <h2>Kelola les tanpa ribet.</h2>
           <p>Absen tentor dari HP, kuota paket terhitung otomatis, tagih orang tua lewat WhatsApp, honor beres tiap akhir bulan.</p>

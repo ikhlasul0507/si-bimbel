@@ -1,4 +1,6 @@
 .lg{min-height:100vh;min-height:100dvh;display:grid;grid-template-columns:1fr;grid-template-rows:auto 1fr;background:var(--bg);color:var(--ink)}
+/* Pastikan halaman login tidak terdorong padding bawaan dari globals.css */
+body:has(.lg){padding:0;margin:0}
 .lg *{box-sizing:border-box}
 
 /* Panel kiri / header atas */
