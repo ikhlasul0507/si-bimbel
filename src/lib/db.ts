@@ -8,7 +8,8 @@ export const supabase = createClient(
 );
 
 export type Student = { id: string; name: string; parent_name: string | null; phone: string; package_name: string; quota_total: number; quota_used: number; price: number; paid: boolean };
-export type Tutor = { id: string; name: string; phone: string | null; rate: number };
+export type Slot = { day: string; start: string; end: string };
+export type Tutor = { id: string; name: string; phone: string | null; rate: number; area?: string | null; subjects?: string | null; pay_scheme?: "tetap" | "bagi_hasil"; cut_percent?: number; availability?: Slot[]; active?: boolean };
 export type Session = { id: string; student_id: string; tutor_id: string; date: string; time: string; attended: boolean };
 
 export const rp = (n: number) => "Rp" + Math.round(n).toLocaleString("id-ID");
