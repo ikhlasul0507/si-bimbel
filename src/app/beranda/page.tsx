@@ -2,48 +2,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import Shell from "@/components/Shell";
+import JadwalModal from "@/components/JadwalModal";
 import { supabase, useQuery, rp, localDate, sisa, hhmm, Student, Tutor, Session } from "@/lib/db";
 
 const shift = (d: string, n: number) => { const x = new Date(d + "T00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("sv-SE"); };
 const initials = (n: string) => n.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
-
-function JadwalModal({ students, tutors, date, tid, onClose, onSaved }: { students: Student[]; tutors: Tutor[]; date: string; tid: string; onClose: () => void; onSaved: (d: string) => void }) {
-  const [f, setF] = useState({ sid: "", tid, date, time: "14:00" });
-  const [busy, setBusy] = useState(false);
-  const kosong = students.length === 0 || tutors.length === 0;
-
-  async function simpan() {
-    if (!f.sid || !f.tid) return alert("Pilih murid dan tentor dulu.");
-    setBusy(true);
-    const { error } = await supabase.from("sessions").insert({ student_id: f.sid, tutor_id: f.tid, date: f.date, time: f.time });
-    setBusy(false);
-    if (error) return alert(error.message);
-    onSaved(f.date);
-  }
-
-  return (
-    <div className="ov" onClick={onClose}>
-      <div className="dlg" role="dialog" aria-modal="true" aria-labelledby="jt" onClick={(e) => e.stopPropagation()}>
-        <div className="row"><h2 id="jt" className="grow" style={{ margin: 0 }}>Jadwal les baru</h2><button className="btn ghost sm" onClick={onClose}>Tutup</button></div>
-        {kosong ? (
-          <p className="meta" style={{ marginTop: 14 }}>Tambahkan dulu data <Link href="/murid"><b>murid</b></Link> dan <Link href="/tentor"><b>tentor</b></Link>, baru jadwal bisa dibuat.</p>
-        ) : (
-          <>
-            <label htmlFor="jm">Murid</label>
-            <select id="jm" value={f.sid} onChange={(e) => setF({ ...f, sid: e.target.value })}><option value="">Pilih murid</option>{students.map((s) => <option key={s.id} value={s.id}>{s.name} · {s.package_name}</option>)}</select>
-            <label htmlFor="jt2">Tentor</label>
-            <select id="jt2" value={f.tid} onChange={(e) => setF({ ...f, tid: e.target.value })}><option value="">Pilih tentor</option>{tutors.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}</select>
-            <div className="two">
-              <div><label htmlFor="jd">Tanggal</label><input id="jd" type="date" value={f.date} onChange={(e) => setF({ ...f, date: e.target.value })} /></div>
-              <div><label htmlFor="jj">Jam</label><input id="jj" type="time" value={f.time} onChange={(e) => setF({ ...f, time: e.target.value })} /></div>
-            </div>
-            <button className="btn full" disabled={busy} onClick={simpan}>{busy ? "Menyimpan…" : "Simpan jadwal"}</button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default function Beranda() {
   const today = localDate();
@@ -90,7 +53,7 @@ export default function Beranda() {
     const s = stu(x.student_id);
     return (
       <div className="srow">
-        <div className="stime">{hhmm(x.time)}</div>
+        <div className="stime">{hhmm(x.time)}{(x as Session & { end_time?: string | null }).end_time && <small className="meta" style={{ display: "block", fontWeight: 500 }}>s/d {hhmm((x as Session & { end_time?: string | null }).end_time as string)}</small>}</div>
         <div className="grow">
           <div className="name">{s?.name ?? "Murid dihapus"}</div>
           <div className="meta">{s?.package_name}{tentor ? ` · ${tentor}` : ""}{s ? ` · sisa ${sisa(s)}` : ""}</div>
@@ -188,7 +151,7 @@ export default function Beranda() {
 
       {modal && (
         <JadwalModal students={st.rows} tutors={tu.rows} date={date} tid={modal.tid} onClose={() => setModal(null)}
-          onSaved={(d) => { setModal(null); if (d !== date) setDate(d); else se.reload(); }} />
+          onSaved={(d) => { setModal(null); st.reload(); lama.reload(); if (d !== date) setDate(d); else se.reload(); }} />
       )}
     </Shell>
   );

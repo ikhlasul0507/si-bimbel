@@ -100,3 +100,23 @@ input,select{width:100%;padding:11px 13px;border-radius:10px;border:1px solid va
 .tags{display:flex;flex-wrap:wrap;gap:8px}
 .tag{display:inline-block;border:1px solid var(--line);background:var(--soft);border-radius:99px;padding:4px 12px;font-size:12px;font-weight:700}
 .pub{max-width:440px;margin:0 auto;padding:24px 16px}
+
+/* Form tambah jadwal les */
+.dlg.full{padding:0;display:flex;flex-direction:column;max-width:560px;max-height:92vh;overflow:hidden}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line)}.mhead h2{margin:0}
+.mbody{padding:16px 20px;overflow:auto;flex:1}
+.mfoot{padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line)}
+.grp{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.gtop{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;font-weight:800;font-size:14px}
+.gtop a{font-size:12px;font-weight:700}
+.searchrow{display:flex;gap:8px}.searchrow select{flex:1;min-width:0}
+.iconbtn{flex:none;width:46px;border:1px solid var(--line);border-radius:10px;background:var(--card)}.iconbtn[aria-pressed="true"]{background:var(--soft);border-color:var(--brand)}
+.sesi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0}
+.sesi .cap{font-size:12px;font-weight:800;color:var(--brand);margin-bottom:6px}
+.tri{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) auto minmax(0,1fr);gap:6px;align-items:end}
+.tri label{margin:8px 0 4px;font-size:12px}.tri input,.tri select{padding:9px 7px;font-size:13px}
+.tri .sd{padding-bottom:10px;font-size:12px;font-weight:700;color:var(--mute)}
+.durs{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px;font-size:12px;color:var(--mute)}
+.dur{border:0;border-radius:9px;padding:7px 10px;background:var(--soft);font-size:12px;font-weight:700;color:var(--ink)}
+.dur[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
+.warnbox{margin-top:10px;padding:8px 10px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-size:12px;font-weight:600}
