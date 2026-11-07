@@ -1,45 +1,56 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import Shell from "@/components/Shell";
-import { supabase, useQuery, sisa, Student } from "@/lib/db";
+import MuridForm, { MuridX } from "@/components/MuridForm";
+import { supabase, useQuery, rp, sisa, Tutor } from "@/lib/db";
 
-const kosong = { name: "", parent_name: "", phone: "", package_name: "", quota_total: 8, price: 600000 };
+type Les = { id: string; student_id: string; tutor_id: string; subject: string };
+const TABS = [["aktif", "Aktif"], ["trial", "Trial"], ["arsip", "Arsip"], ["semua", "Semua"]] as const;
 
 export default function Murid() {
-  const { rows, loading, reload } = useQuery<Student>(() => supabase.from("students").select("*").order("name"), []);
-  const [f, setF] = useState(kosong);
+  const mu = useQuery<MuridX>(() => supabase.from("students").select("*").order("name"), []);
+  const tu = useQuery<Tutor>(() => supabase.from("tutors").select("*"), []);
+  const le = useQuery<Les>(() => supabase.from("lessons").select("id,student_id,tutor_id,subject").eq("status", "aktif"), []);
+  const [tab, setTab] = useState<(typeof TABS)[number][0]>("aktif");
+  const [q, setQ] = useState("");
+  const [baru, setBaru] = useState(false);
 
-  async function simpan() {
-    if (!f.name.trim() || !f.phone.trim() || !f.package_name.trim() || f.quota_total < 1) return alert("Isi nama murid, nomor WhatsApp, paket, dan jumlah pertemuan.");
-    const { error } = await supabase.from("students").insert({ ...f, name: f.name.trim() });
-    if (error) return alert(error.message);
-    setF(kosong); reload();
-  }
-  async function hapus(s: Student) { if (confirm(`Hapus ${s.name} beserta jadwalnya?`)) { await supabase.from("students").delete().eq("id", s.id); reload(); } }
+  const status = (m: MuridX) => m.status ?? "aktif";
+  const hitung = (k: string) => (k === "semua" ? mu.rows.length : mu.rows.filter((m) => status(m) === k).length);
+  const lesOf = (m: MuridX) => le.rows.filter((l) => l.student_id === m.id);
+  const tutorNama = (id: string) => tu.rows.find((t) => t.id === id)?.name ?? "";
+  const cari = q.trim().toLowerCase();
+  const daftar = mu.rows.filter((m) => (tab === "semua" || status(m) === tab) &&
+    (!cari || [m.name, m.parent_name ?? "", ...lesOf(m).flatMap((l) => [l.subject, tutorNama(l.tutor_id)])].join(" ").toLowerCase().includes(cari)));
 
   return (
     <Shell>
-      <h1>Murid</h1>
-      <p className="sub">{rows.length} murid terdaftar</p>
-      {loading ? <p className="empty">Memuat…</p> : rows.length === 0 ? <div className="card empty">Belum ada murid. Tambah murid pertama di bawah.</div> :
-        rows.map((s) => (
-          <div className="card" key={s.id}>
-            <div className="row"><div className="grow"><div className="name">{s.name}</div><div className="meta">{s.package_name} · {s.parent_name || "Orang tua"}</div></div>
-              <span className={`pill ${sisa(s) <= 0 ? "bad" : sisa(s) <= 2 ? "warn" : "ok"}`}>Sisa {sisa(s)}</span></div>
-            <div className={`bar${sisa(s) <= 1 ? " low" : ""}`}><i style={{ width: `${Math.min(100, (s.quota_used / s.quota_total) * 100)}%` }} /></div>
-            <div className="row" style={{ marginTop: 8 }}><span className="meta grow">{s.quota_used} dari {s.quota_total} pertemuan terpakai</span><button className="btn ghost sm" onClick={() => hapus(s)}>Hapus</button></div>
-          </div>
-        ))}
-      <h2>Tambah murid</h2>
-      <div className="card">
-        <label htmlFor="n">Nama murid</label><input id="n" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-        <label htmlFor="p">Nama orang tua</label><input id="p" value={f.parent_name} onChange={(e) => setF({ ...f, parent_name: e.target.value })} />
-        <label htmlFor="w">Nomor WhatsApp orang tua</label><input id="w" inputMode="tel" placeholder="08xxxxxxxxxx" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} />
-        <label htmlFor="k">Paket</label><input id="k" placeholder="Contoh: Matematika SD" value={f.package_name} onChange={(e) => setF({ ...f, package_name: e.target.value })} />
-        <label htmlFor="t">Jumlah pertemuan</label><input id="t" type="number" min={1} value={f.quota_total} onChange={(e) => setF({ ...f, quota_total: +e.target.value })} />
-        <label htmlFor="h">Harga paket (Rp)</label><input id="h" type="number" min={0} value={f.price} onChange={(e) => setF({ ...f, price: +e.target.value })} />
-        <button className="btn full" onClick={simpan}>Simpan murid</button>
+      <div className="head">
+        <div><h1>Murid</h1><p className="sub">{hitung("aktif")} aktif</p></div>
+        <button className="btn" onClick={() => setBaru(true)}>+ Murid</button>
       </div>
+      <div className="toolbar" style={{ marginBottom: 14 }}>
+        <div className="seg" role="group" aria-label="Status murid">
+          {TABS.map(([k, l]) => <button key={k} aria-pressed={tab === k} onClick={() => setTab(k)}>{l} ({hitung(k)})</button>)}
+        </div>
+        <input className="right" style={{ maxWidth: 280 }} type="search" placeholder="Cari nama, ortu, mapel, tentor…" aria-label="Cari murid" value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+      {mu.loading ? <p className="empty">Memuat…</p> : daftar.length === 0 ? (
+        <div className="card empty"><b>{mu.rows.length === 0 ? "Belum ada murid" : "Tidak ada murid di tampilan ini"}</b><p className="meta">{mu.rows.length === 0 ? "Tambah murid pertama untuk mulai." : "Ubah tab atau kata pencarian."}</p>{mu.rows.length === 0 && <button className="btn" onClick={() => setBaru(true)}>+ Murid</button>}</div>
+      ) : daftar.map((m) => {
+        const ls = lesOf(m);
+        const info = ls.length === 0 ? "Belum ada les" : `${ls[0].subject} · ${tutorNama(ls[0].tutor_id)}${ls.length > 1 ? ` · +${ls.length - 1} les` : ""}`;
+        return (
+          <Link href={`/murid/${m.id}`} className="card row link" key={m.id}>
+            <span className="avatar">{m.name[0]?.toUpperCase()}</span>
+            <div className="grow"><div className="name">{m.name}{status(m) !== "aktif" && <span className="pill warn" style={{ marginLeft: 8 }}>{status(m) === "trial" ? "Trial" : "Arsip"}</span>}</div><div className="meta">{info}</div></div>
+            {!m.paid && m.price > 0 ? <span className="pill warn">{rp(m.price)}</span> : ls.length > 0 ? <span className="pill ok">Sisa {sisa(m)}</span> : null}
+            <span className="meta">›</span>
+          </Link>
+        );
+      })}
+      {baru && <MuridForm awal={null} onClose={() => setBaru(false)} onSaved={() => { setBaru(false); mu.reload(); }} />}
     </Shell>
   );
 }

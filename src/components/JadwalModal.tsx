@@ -30,17 +30,17 @@ function buatSesi(slots: Slot[], mulai: string, jumlah: number) {
   return out;
 }
 
-export default function JadwalModal({ students, tutors, date, tid, onClose, onSaved }: {
-  students: Student[]; tutors: Tutor[]; date: string; tid: string; onClose: () => void; onSaved: (d: string) => void;
+export default function JadwalModal({ students, tutors, date, tid, muridId, onClose, onSaved }: {
+  students: Student[]; tutors: Tutor[]; date: string; tid: string; muridId?: string; onClose: () => void; onSaved: (d: string) => void;
 }) {
-  const [sid, setSid] = useState("");
+  const [sid, setSid] = useState(muridId ?? "");
   const [mapel, setMapel] = useState("");
   const [jenis, setJenis] = useState("privat");
   const [tutorId, setTutorId] = useState(tid);
   const [cari, setCari] = useState(false);
   const [slots, setSlots] = useState<Slot[]>([{ day: "Senin", start: "15:30", end: "17:00" }]);
   const [jumlah, setJumlah] = useState(8);
-  const [harga, setHarga] = useState(0);
+  const [harga, setHarga] = useState(students.find((s) => s.id === muridId)?.price ?? 0);
   const [honor, setHonor] = useState<number | "">("");
   const [mulai, setMulai] = useState(date);
   const [status, setStatus] = useState("aktif");

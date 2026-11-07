@@ -120,3 +120,5 @@ input,select{width:100%;padding:11px 13px;border-radius:10px;border:1px solid va
 .dur{border:0;border-radius:9px;padding:7px 10px;background:var(--soft);font-size:12px;font-weight:700;color:var(--ink)}
 .dur[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
 .warnbox{margin-top:10px;padding:8px 10px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-size:12px;font-weight:600}
+
+textarea{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:var(--card);font:inherit;color:inherit;resize:vertical}
