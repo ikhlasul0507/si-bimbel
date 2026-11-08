@@ -4,6 +4,7 @@ import Link from "next/link";
 import Shell from "@/components/Shell";
 import MuridForm, { MuridX } from "@/components/MuridForm";
 import { supabase, useQuery, rp, sisa, Tutor } from "@/lib/db";
+import { Invoice, sisaTagihan } from "@/lib/app";
 
 type Les = { id: string; student_id: string; tutor_id: string; subject: string };
 const TABS = [["aktif", "Aktif"], ["trial", "Trial"], ["arsip", "Arsip"], ["semua", "Semua"]] as const;
@@ -12,6 +13,7 @@ export default function Murid() {
   const mu = useQuery<MuridX>(() => supabase.from("students").select("*").order("name"), []);
   const tu = useQuery<Tutor>(() => supabase.from("tutors").select("*"), []);
   const le = useQuery<Les>(() => supabase.from("lessons").select("id,student_id,tutor_id,subject").eq("status", "aktif"), []);
+  const iv = useQuery<Invoice>(() => supabase.from("invoices").select("*"), []);
   const [tab, setTab] = useState<(typeof TABS)[number][0]>("aktif");
   const [q, setQ] = useState("");
   const [baru, setBaru] = useState(false);
@@ -20,6 +22,7 @@ export default function Murid() {
   const hitung = (k: string) => (k === "semua" ? mu.rows.length : mu.rows.filter((m) => status(m) === k).length);
   const lesOf = (m: MuridX) => le.rows.filter((l) => l.student_id === m.id);
   const tutorNama = (id: string) => tu.rows.find((t) => t.id === id)?.name ?? "";
+  const utang = (m: MuridX) => iv.rows.filter((i) => i.student_id === m.id).reduce((a, i) => a + Math.max(0, sisaTagihan(i)), 0);
   const cari = q.trim().toLowerCase();
   const daftar = mu.rows.filter((m) => (tab === "semua" || status(m) === tab) &&
     (!cari || [m.name, m.parent_name ?? "", ...lesOf(m).flatMap((l) => [l.subject, tutorNama(l.tutor_id)])].join(" ").toLowerCase().includes(cari)));
@@ -45,7 +48,7 @@ export default function Murid() {
           <Link href={`/murid/${m.id}`} className="card row link" key={m.id}>
             <span className="avatar">{m.name[0]?.toUpperCase()}</span>
             <div className="grow"><div className="name">{m.name}{status(m) !== "aktif" && <span className="pill warn" style={{ marginLeft: 8 }}>{status(m) === "trial" ? "Trial" : "Arsip"}</span>}</div><div className="meta">{info}</div></div>
-            {!m.paid && m.price > 0 ? <span className="pill warn">{rp(m.price)}</span> : ls.length > 0 ? <span className="pill ok">Sisa {sisa(m)}</span> : null}
+            {utang(m) > 0 ? <span className="pill warn">{rp(utang(m))}</span> : ls.length > 0 ? <span className="pill ok">Sisa {sisa(m)}</span> : null}
             <span className="meta">›</span>
           </Link>
         );

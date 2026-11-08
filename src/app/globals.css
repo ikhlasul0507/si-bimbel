@@ -122,3 +122,16 @@ input,select{width:100%;padding:11px 13px;border-radius:10px;border:1px solid va
 .warnbox{margin-top:10px;padding:8px 10px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-size:12px;font-weight:600}
 
 textarea{width:100%;padding:11px 13px;border-radius:10px;border:1px solid var(--line);background:var(--card);font:inherit;color:inherit;resize:vertical}
+
+/* Fase 2 sampai 4 */
+.three{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px}
+.three input{padding:10px 8px;font-size:13px}
+.opt{display:block;width:100%;text-align:left;padding:10px 12px;margin-bottom:8px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink)}
+.opt small{display:block;color:var(--mute);font-size:12px}
+.opt[aria-pressed="true"]{border-color:var(--ok);background:var(--ok-bg)}
+.rowbtn{width:100%;border:0;background:none;text-align:left;color:inherit}
+.pesan{white-space:pre-wrap;word-break:break-word;font:inherit;font-size:13px;background:var(--ok-bg);color:var(--ink);border-radius:12px;padding:12px 14px;margin:10px 0 0}
+.ok{padding:10px 12px;border-radius:10px;background:var(--ok-bg);color:var(--ok);font-size:13px;font-weight:600}
+details.grp summary{cursor:pointer}
+.pub.portal{max-width:560px}
+@media print{.noprint,.mnav,.side{display:none!important}body{background:#fff}}

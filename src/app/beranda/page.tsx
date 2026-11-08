@@ -3,9 +3,11 @@ import { useState } from "react";
 import Link from "next/link";
 import Shell from "@/components/Shell";
 import JadwalModal from "@/components/JadwalModal";
-import { supabase, useQuery, rp, localDate, sisa, hhmm, Student, Tutor, Session } from "@/lib/db";
+import { CatatModal } from "@/components/PertemuanModals";
+import { supabase, useQuery, rp, localDate, sisa, hhmm, Student, Tutor } from "@/lib/db";
+import { SesiX, Invoice, Makeup, sisaTagihan, labelOutcome, geserHari } from "@/lib/app";
 
-const shift = (d: string, n: number) => { const x = new Date(d + "T00:00"); x.setDate(x.getDate() + n); return x.toLocaleDateString("sv-SE"); };
+type Les = { id: string; subject: string };
 const initials = (n: string) => n.split(" ").slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 
 export default function Beranda() {
@@ -14,34 +16,34 @@ export default function Beranda() {
   const [filter, setFilter] = useState<"semua" | "belum" | "dicatat">("semua");
   const [view, setView] = useState<"tentor" | "jam">("tentor");
   const [modal, setModal] = useState<{ tid: string } | null>(null);
+  const [catat, setCatat] = useState<SesiX | null>(null);
 
   const st = useQuery<Student>(() => supabase.from("students").select("*").order("name"), []);
   const tu = useQuery<Tutor>(() => supabase.from("tutors").select("*").order("name"), []);
-  const se = useQuery<Session>(() => supabase.from("sessions").select("*").eq("date", date).order("time"), [date]);
-  const lama = useQuery<Session>(() => supabase.from("sessions").select("*").eq("attended", false).gte("date", shift(today, -7)).lt("date", today).order("date"), [today]);
+  const le = useQuery<Les>(() => supabase.from("lessons").select("id,subject"), []);
+  const se = useQuery<SesiX>(() => supabase.from("sessions").select("*").eq("date", date).order("time"), [date]);
+  const lama = useQuery<SesiX>(() => supabase.from("sessions").select("*").is("outcome", null).gte("date", geserHari(today, -7)).lt("date", today).order("date"), [today]);
+  const iv = useQuery<Invoice>(() => supabase.from("invoices").select("*"), []);
+  const mk = useQuery<Makeup>(() => supabase.from("makeups").select("*").eq("done", false), []);
+  const reloadAll = () => { se.reload(); st.reload(); lama.reload(); iv.reload(); mk.reload(); };
 
   const stu = (id: string) => st.rows.find((s) => s.id === id);
   const tut = (id: string) => tu.rows.find((t) => t.id === id);
+  const mapel = (id?: string | null) => le.rows.find((l) => l.id === id)?.subject ?? "Les";
   const all = se.rows;
-  const dicatat = all.filter((x) => x.attended).length;
-  const shown = all.filter((x) => filter === "semua" || (filter === "belum" ? !x.attended : x.attended));
+  const dicatat = all.filter((x) => x.outcome).length;
+  const shown = all.filter((x) => filter === "semua" || (filter === "belum" ? !x.outcome : !!x.outcome));
   const tutorAktif = tu.rows.filter((t) => shown.some((x) => x.tutor_id === t.id));
-  const unpaid = st.rows.filter((s) => !s.paid);
-  const piutang = unpaid.reduce((a, s) => a + s.price, 0);
-  const menipis = st.rows.filter((s) => sisa(s) <= 2);
-  const urus = (lama.rows.length > 0 ? 1 : 0) + (menipis.length > 0 ? 1 : 0);
+  const belum = iv.rows.filter((i) => sisaTagihan(i) > 0);
+  const piutang = belum.reduce((a, i) => a + sisaTagihan(i), 0);
+  const menipis = st.rows.filter((s) => (s as Student & { status?: string }).status !== "arsip" && s.quota_total > 0 && s.quota_used > 0 && sisa(s) <= 2);
+  const urus = (lama.rows.length > 0 ? 1 : 0) + (menipis.length > 0 ? 1 : 0) + (mk.rows.length > 0 ? 1 : 0);
   const isToday = date === today;
 
-  async function catat(x: Session) {
-    const s = stu(x.student_id);
-    if (!x.attended && s && sisa(s) <= 0) return alert(`Paket ${s.name} sudah habis. Perpanjang paketnya dulu.`);
-    await supabase.from("sessions").update({ attended: !x.attended }).eq("id", x.id);
-    se.reload(); st.reload(); lama.reload();
-  }
-  async function hapus(x: Session) {
+  async function hapus(x: SesiX) {
     if (!confirm("Hapus jadwal ini?")) return;
     await supabase.from("sessions").delete().eq("id", x.id);
-    se.reload(); st.reload(); lama.reload();
+    reloadAll();
   }
   function waTentor(t: Tutor) {
     const no = (t.phone || "").replace(/\D/g, "").replace(/^0/, "62");
@@ -49,17 +51,18 @@ export default function Beranda() {
     return `https://wa.me/${no}?text=${encodeURIComponent(`Halo ${t.name}, jadwal mengajar ${new Date(date + "T00:00").toLocaleDateString("id-ID", { day: "numeric", month: "long" })}:\n${baris}`)}`;
   }
 
-  const Baris = ({ x, tentor }: { x: Session; tentor?: string }) => {
+  const Baris = ({ x, tentor }: { x: SesiX; tentor?: string }) => {
     const s = stu(x.student_id);
     return (
       <div className="srow">
-        <div className="stime">{hhmm(x.time)}{(x as Session & { end_time?: string | null }).end_time && <small className="meta" style={{ display: "block", fontWeight: 500 }}>s/d {hhmm((x as Session & { end_time?: string | null }).end_time as string)}</small>}</div>
+        <div className="stime">{hhmm(x.time)}{x.end_time && <small className="meta" style={{ display: "block", fontWeight: 500 }}>s/d {hhmm(x.end_time)}</small>}</div>
         <div className="grow">
           <div className="name">{s?.name ?? "Murid dihapus"}</div>
-          <div className="meta">{s?.package_name}{tentor ? ` · ${tentor}` : ""}{s ? ` · sisa ${sisa(s)}` : ""}</div>
+          <div className="meta">{mapel(x.lesson_id)}{tentor ? ` · ${tentor}` : ""}{s ? ` · sisa ${sisa(s)}` : ""}</div>
+          {x.outcome && <span className={`pill ${x.outcome === "hadir" ? "ok" : "warn"}`}>{labelOutcome(x.outcome)}</span>}
         </div>
         <button className="btn ghost sm" aria-label="Hapus jadwal" onClick={() => hapus(x)}>✕</button>
-        <button className={`btn sm${x.attended ? " done" : ""}`} onClick={() => catat(x)}>{x.attended ? "✓ Dicatat" : "Catat"}</button>
+        <button className={`btn sm${x.outcome ? " ghost" : ""}`} onClick={() => setCatat(x)}>{x.outcome ? "Ubah" : "Catat"}</button>
       </div>
     );
   };
@@ -76,16 +79,16 @@ export default function Beranda() {
 
       <div className="statsbar">
         <div><span>{isToday ? "Pertemuan hari ini" : "Pertemuan di tanggal ini"}</span><b>{dicatat}<small> / {all.length}</small></b><span>{new Set(all.map((x) => x.tutor_id)).size} tentor bertugas</span></div>
-        <div><span>Piutang belum masuk</span><b className="warn">{rp(piutang)}</b><span>{unpaid.length} tagihan menunggu</span></div>
+        <div><span>Piutang belum masuk</span><b className="warn">{rp(piutang)}</b><span>{belum.length} tagihan menunggu</span></div>
         <div><span>Kuota mau habis</span><b>{menipis.length}<small> murid</small></b><span>sisa 2 pertemuan atau kurang</span></div>
-        <div><span>Murid aktif</span><b>{st.rows.length}</b><span>{tu.rows.length} tentor terdaftar</span></div>
+        <div><span>Pengganti</span><b>{mk.rows.length}<small> antrean</small></b><span>utang pertemuan murid</span></div>
       </div>
 
       <div className="toolbar">
         <div className="datenav">
-          <button aria-label="Hari sebelumnya" onClick={() => setDate(shift(date, -1))}>‹</button>
+          <button aria-label="Hari sebelumnya" onClick={() => setDate(geserHari(date, -1))}>‹</button>
           <input type="date" aria-label="Tanggal" value={date} onChange={(e) => e.target.value && setDate(e.target.value)} />
-          <button aria-label="Hari berikutnya" onClick={() => setDate(shift(date, 1))}>›</button>
+          <button aria-label="Hari berikutnya" onClick={() => setDate(geserHari(date, 1))}>›</button>
         </div>
         <div className="seg" role="group" aria-label="Filter">
           <button aria-pressed={filter === "semua"} onClick={() => setFilter("semua")}>Semua ({all.length})</button>
@@ -113,7 +116,7 @@ export default function Beranda() {
               <div className="card flush" key={t.id}>
                 <div className="thead">
                   <span className="avatar">{initials(t.name)}</span>
-                  <div className="grow"><div className="name">{t.name}</div><div className="meta">{rows.length} sesi · {rows.filter((x) => x.attended).length} udah dicatat</div></div>
+                  <div className="grow"><div className="name">{t.name}</div><div className="meta">{rows.length} sesi · {rows.filter((x) => x.outcome).length} udah dicatat</div></div>
                   <button className="btn ghost sm" onClick={() => setModal({ tid: t.id })}>+ Jam</button>
                   {t.phone && <a className="btn wa sm" target="_blank" rel="noopener noreferrer" href={waTentor(t)}>WA</a>}
                 </div>
@@ -134,6 +137,12 @@ export default function Beranda() {
               <span className="pill warn">{lama.rows.length} sesi</span>
             </button>
           )}
+          {mk.rows.length > 0 && (
+            <Link href="/murid" className="alert">
+              <div className="grow"><b>Ada utang pertemuan pengganti</b><small>Jadwalkan dari halaman detail murid.</small></div>
+              <span className="pill warn">{mk.rows.length} sesi</span>
+            </Link>
+          )}
           {menipis.length > 0 && (
             <Link href="/murid" className="alert">
               <div className="grow"><b>Kuota murid hampir habis</b><small>{menipis.slice(0, 2).map((s) => s.name).join(", ")}{menipis.length > 2 ? ` dan ${menipis.length - 2} lainnya` : ""}</small></div>
@@ -143,16 +152,17 @@ export default function Beranda() {
           <h2>Aksi cepat</h2>
           <div className="card flush">
             <button className="qa" onClick={() => setModal({ tid: "" })}>Tambah jadwal les<span>›</span></button>
-            <Link className="qa" href="/murid">Tambah murid baru<span>›</span></Link>
-            <Link className="qa" href="/tentor">Tambah tentor baru<span>›</span></Link>
+            <Link className="qa" href="/murid">Murid<span>›</span></Link>
+            <Link className="qa" href="/tentor">Tentor<span>›</span></Link>
+            <Link className="qa" href="/tagihan">Tagihan<span>›</span></Link>
+            <Link className="qa" href="/akhir-bulan">Akhir bulan<span>›</span></Link>
+            <Link className="qa" href="/pengaturan">Branding & pembayaran<span>›</span></Link>
           </div>
         </aside>
       </div>
 
-      {modal && (
-        <JadwalModal students={st.rows} tutors={tu.rows} date={date} tid={modal.tid} onClose={() => setModal(null)}
-          onSaved={(d) => { setModal(null); st.reload(); lama.reload(); if (d !== date) setDate(d); else se.reload(); }} />
-      )}
+      {modal && <JadwalModal students={st.rows} tutors={tu.rows} date={date} tid={modal.tid} onClose={() => setModal(null)} onSaved={(d) => { setModal(null); reloadAll(); if (d !== date) setDate(d); }} />}
+      {catat && <CatatModal sesi={catat} murid={stu(catat.student_id)} tutor={tut(catat.tutor_id)} mapel={mapel(catat.lesson_id)} onClose={() => setCatat(null)} onSaved={() => { setCatat(null); reloadAll(); }} />}
     </Shell>
   );
 }

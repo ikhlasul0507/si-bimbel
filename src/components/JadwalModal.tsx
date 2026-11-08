@@ -93,7 +93,8 @@ export default function JadwalModal({ students, tutors, date, tid, muridId, onCl
       if (e2) { await supabase.from("lessons").delete().eq("id", les.id); return gagal(e2.message); }
     }
     if (paket !== "ada") {
-      const { error: e3 } = await supabase.from("students").update({ package_name: mapel.trim(), quota_total: jumlah, quota_used: 0, price: harga, paid: paket === "lunas" }).eq("id", sid);
+      const { error: e3 } = await supabase.from("students").update({ package_name: mapel.trim(), quota_total: jumlah, quota_used: 0, price: harga, paid: true }).eq("id", sid);
+      if (!e3 && harga > 0) await supabase.from("invoices").insert({ student_id: sid, kind: "spp", title: `Paket ${mapel.trim()} (${jumlah} pertemuan)`, amount: harga, paid_amount: paket === "lunas" ? harga : 0, due_date: shift(mulai, 7) });
       if (e3) return gagal(e3.message);
     }
     setBusy(false);

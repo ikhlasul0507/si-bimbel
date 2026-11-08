@@ -26,7 +26,7 @@ export default function DetailTentor() {
   const tu = useQuery<TutorX>(() => supabase.from("tutors").select("*").eq("id", id), [id]);
   const st = useQuery<Student>(() => supabase.from("students").select("*").order("name"), []);
   const mendatang = useQuery<Session>(() => supabase.from("sessions").select("*").eq("tutor_id", id).gte("date", today).lte("date", shift(today, 13)).order("date").order("time"), [id]);
-  const hadirBulan = useQuery<Session>(() => supabase.from("sessions").select("*").eq("tutor_id", id).eq("attended", true).gte("date", `${bulan}-01`).lt("date", `${nextMonth(bulan)}-01`), [id]);
+  const hadirBulan = useQuery<Session>(() => supabase.from("sessions").select("*").eq("tutor_id", id).not("outcome", "is", null).gte("date", `${bulan}-01`).lt("date", `${nextMonth(bulan)}-01`), [id]);
 
   const t = tu.rows[0];
   if (tu.loading) return <Shell><p className="empty">Memuat…</p></Shell>;
@@ -34,9 +34,7 @@ export default function DetailTentor() {
 
   const stu = (sid: string) => st.rows.find((s) => s.id === sid);
   const bagiHasil = t.pay_scheme === "bagi_hasil";
-  const honor = bagiHasil
-    ? hadirBulan.rows.reduce((a, x) => { const s = stu(x.student_id); return a + (s && s.quota_total > 0 ? (s.price / s.quota_total) * (100 - (t.cut_percent ?? 0)) / 100 : 0); }, 0)
-    : hadirBulan.rows.length * t.rate;
+  const honor = hadirBulan.rows.reduce((a, x) => a + ((x as Session & { honor_amount?: number }).honor_amount ?? 0), 0);
   const link = t.attend_token ? `${origin}/absen/${t.attend_token}` : "";
   const reloadAll = () => { tu.reload(); mendatang.reload(); hadirBulan.reload(); };
 
