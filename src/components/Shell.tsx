@@ -18,7 +18,7 @@ const Ico = ({ n }: { n: string }) => <svg className="ico" viewBox="0 0 24 24" a
 
 type Item = { href?: string; icon: string; label: string };
 const GROUPS: { title: string; items: Item[] }[] = [
-  { title: "Operasional harian", items: [{ href: "/beranda", icon: "today", label: "Hari ini" }, { icon: "week", label: "Jadwal mingguan" }] },
+  { title: "Operasional harian", items: [{ href: "/beranda", icon: "today", label: "Hari ini" }, { href: "/jadwal", icon: "week", label: "Jadwal mingguan" }] },
   { title: "Akademik & keuangan", items: [{ href: "/murid", icon: "murid", label: "Murid" }, { href: "/tentor", icon: "tentor", label: "Tentor" }, { href: "/tagihan", icon: "tagihan", label: "Tagihan" }, { href: "/akhir-bulan", icon: "bulan", label: "Akhir bulan" }] },
   { title: "Lembaga & sistem", items: [{ href: "/pengaturan", icon: "gear", label: "Branding & pembayaran" }] },
 ];
@@ -60,6 +60,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <main className="main"><div className="page">{children}</div></main>
       <nav className="mnav" aria-label="Menu utama">
         <Link href="/beranda" aria-current={path === "/beranda" || path.startsWith("/beranda/") ? "page" : undefined}><Ico n="today" />Hari ini</Link>
+        <Link href="/jadwal" aria-current={path === "/jadwal" || path.startsWith("/jadwal/") ? "page" : undefined}><Ico n="week" />Mingguan</Link>
         <Link href="/murid" aria-current={path === "/murid" || path.startsWith("/murid/") ? "page" : undefined}><Ico n="murid" />Murid</Link>
         <Link href="/tentor" aria-current={path === "/tentor" || path.startsWith("/tentor/") ? "page" : undefined}><Ico n="tentor" />Tentor</Link>
         <Link href="/tagihan" aria-current={path === "/tagihan" || path.startsWith("/tagihan/") ? "page" : undefined}><Ico n="tagihan" />Tagihan</Link>
