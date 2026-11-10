@@ -7,6 +7,7 @@ import { supabase } from "@/lib/db";
 const IC: Record<string, React.ReactNode> = {
   today: <><rect x="3" y="4" width="18" height="18" rx="3" /><path d="M16 2v4M8 2v4M3 10h18m-12 6 2 2 4-4" /></>,
   week: <><rect x="3" y="4" width="18" height="18" rx="3" /><path d="M16 2v4M8 2v4M3 10h18" /></>,
+  upload: <><path d="M12 16V4m0 0L7 9m5-5 5 5M4 16v4h16v-4" /></>,
   murid: <><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.5 3-6 6.5-6s6.5 2.5 6.5 6M17 4.8a3.5 3.5 0 0 1 0 6.4M21.5 20c0-2.8-1.6-4.9-4-5.7" /></>,
   tentor: <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></>,
   tagihan: <><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" /><path d="M9 8h6M9 12h6" /></>,
@@ -20,7 +21,7 @@ type Item = { href?: string; icon: string; label: string };
 const GROUPS: { title: string; items: Item[] }[] = [
   { title: "Operasional harian", items: [{ href: "/beranda", icon: "today", label: "Hari ini" }, { href: "/jadwal", icon: "week", label: "Jadwal mingguan" }] },
   { title: "Akademik & keuangan", items: [{ href: "/murid", icon: "murid", label: "Murid" }, { href: "/tentor", icon: "tentor", label: "Tentor" }, { href: "/tagihan", icon: "tagihan", label: "Tagihan" }, { href: "/akhir-bulan", icon: "bulan", label: "Akhir bulan" }] },
-  { title: "Lembaga & sistem", items: [{ href: "/pengaturan", icon: "gear", label: "Branding & pembayaran" }] },
+  { title: "Lembaga & sistem", items: [{ href: "/import-data", icon: "upload", label: "Import data Excel" }, { href: "/pengaturan", icon: "gear", label: "Branding & pembayaran" }] },
 ];
 
 export default function Shell({ children }: { children: React.ReactNode }) {
@@ -61,6 +62,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <nav className="mnav" aria-label="Menu utama">
         <Link href="/beranda" aria-current={path === "/beranda" || path.startsWith("/beranda/") ? "page" : undefined}><Ico n="today" />Hari ini</Link>
         <Link href="/jadwal" aria-current={path === "/jadwal" || path.startsWith("/jadwal/") ? "page" : undefined}><Ico n="week" />Mingguan</Link>
+        <Link href="/import-data" aria-current={path === "/import-data" || path.startsWith("/import-data/") ? "page" : undefined}><Ico n="upload" />Import</Link>
         <Link href="/murid" aria-current={path === "/murid" || path.startsWith("/murid/") ? "page" : undefined}><Ico n="murid" />Murid</Link>
         <Link href="/tentor" aria-current={path === "/tentor" || path.startsWith("/tentor/") ? "page" : undefined}><Ico n="tentor" />Tentor</Link>
         <Link href="/tagihan" aria-current={path === "/tagihan" || path.startsWith("/tagihan/") ? "page" : undefined}><Ico n="tagihan" />Tagihan</Link>
